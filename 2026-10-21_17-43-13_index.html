@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.5 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Parsons Matrix</title>
+<meta name="description" content="An interactive 3D map placing eleven research data stewardship organizations by domain, function, and users, with a funder-type view.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column, cube first, reference material below */
+:root{
+  --bg:#f6f8f8; --surface:#ffffff; --fg:#14211f; --muted:#56635f; --faint:#8a9692;
+  --rule:#d9e1df; --accent:#0d6a63; --accent-bg:#e1f0ee; --warn-bg:#fbf1dc; --warn-fg:#7a4f05;
+  --display:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --body:"Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --surface:#161e1d; --fg:#e4ebe9; --muted:#a3b0ac; --faint:#6f7c78;
+  --rule:#26312f; --accent:#4fbcb1; --accent-bg:#183330; --warn-bg:#33270f; --warn-fg:#f0c66e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --surface:#161e1d; --fg:#e4ebe9; --muted:#a3b0ac; --faint:#6f7c78;
+  --rule:#26312f; --accent:#4fbcb1; --accent-bg:#183330; --warn-bg:#33270f; --warn-fg:#f0c66e; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:40px}
+header{display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,5vw,2.9rem);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:1.45rem;margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.lede{font-size:1.08rem;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--warn-bg);color:var(--warn-fg);font-weight:500;font-size:13px}
+.tbc{display:inline-block;padding:1px 7px;border-radius:999px;background:var(--warn-bg);color:var(--warn-fg);font-size:11px;font-weight:500;margin-left:4px;white-space:nowrap}
+section{display:flex;flex-direction:column;gap:14px}
+.figure{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px}
+#cube{width:100%;height:660px}
+@media (max-width:640px){#cube{height:480px}}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.ctrl-label{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:7px;overflow:hidden}
+.seg button{font:500 13px/1 var(--body);padding:8px 12px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent-bg);color:var(--accent)}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.tg{font:500 13px/1 var(--body);display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:6px;border:1px solid var(--rule);background:var(--bg);color:var(--fg);cursor:pointer}
+.tg i,.sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.tg[aria-pressed="false"]{color:var(--faint);background:transparent}
+.tg[aria-pressed="false"] i{opacity:.25}
+.tg.ghost{color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.ring{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--muted);display:inline-block}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block}
+.hint{font-size:13px;color:var(--muted)}
+.axes{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.axis{display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--accent);padding-top:10px;min-width:0}
+.axis h3{margin:0;font:600 15px var(--body)}
+.axis .q{font-size:13px;color:var(--muted)}
+.axis ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:14px}
+.was{font-size:12px;color:var(--faint)}
+.def{border-left:3px solid var(--accent);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:6px;border-radius:0}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:11px 12px;border-bottom:1px solid var(--rule)}
+th{font:600 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:none}
+td.org{font-weight:600}
+td.org i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
+td small{display:block;font-weight:400;color:var(--muted);margin-top:4px;font-size:13px;max-width:36ch}
+.reach{color:var(--muted)}
+a{color:var(--accent)}
+.qs{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none}
+.qs li{display:flex;flex-direction:column;gap:3px;max-width:72ch}
+.qs b{font-weight:600}
+footer{font-size:13px;color:var(--faint);border-top:1px solid var(--rule);padding-top:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Research data stewardship landscape</div>
+  <h1>The Parsons Matrix</h1>
+  <p class="lede">A three-axis map of who works where in research data stewardship. Each organization sits at the domains whose data it handles, the functions it performs, and the users it serves. Eleven organizations are placed here, and the cube can be colored by who pays for each one.</p>
+  <div class="meta"><span class="chip">Revised axes and first-pass placements, open for review</span><span>Steve Diggs · October 21, 2026</span></div>
+</header>
+
+<section>
+  <h2>The cube</h2>
+  <p class="hint">Drag to rotate, scroll to zoom, hover any point for its cell. Isolating one organization at a time is the clearest way to read its shape. Switch to funder type to see who pays for which part of the space.</p>
+  <div class="figure">
+    <div class="ctrl">
+      <span class="ctrl-label">Color by</span>
+      <div class="seg" role="group" aria-label="Color by">
+        <button type="button" id="mode-org" aria-pressed="true">Organization</button>
+        <button type="button" id="mode-fund" aria-pressed="false">Funder type</button>
+      </div>
+      <div class="legend" id="fundLegend" hidden></div>
+    </div>
+    <div class="toggles" id="toggles"></div>
+    <div id="cube" role="img" aria-label="Rotatable 3D plot of eleven organizations across domain, function, and users"></div>
+    <div class="legend"><span><span class="dot"></span>Home domain</span><span><span class="ring"></span>Reach beyond the mandate</span><span>Points are offset slightly within each cell so overlapping organizations stay visible.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>The three axes</h2>
+  <p>Each axis answers one question. These are revised from the original figure after placing real organizations in it; the earlier names and values are noted under each.</p>
+  <div class="axes">
+    <div class="axis"><h3>Domain</h3><span class="q">Whose data?</span><ul><li>Earth system</li><li>Life</li><li>Physical (outside the Earth system)</li><li>Social</li><li>Health</li></ul><span class="was">Was "Disciplines": EES, Life science, Physical science, Social science, Medicine. EES and Physical science overlapped for every climate organization.</span></div>
+    <div class="axis"><h3>Function</h3><span class="q">What does it do?</span><ul><li>Produce</li><li>Preserve</li><li>Standardize</li><li>Integrate</li><li>Deliver</li><li>Coordinate</li><li>Advocate</li><li>Train</li></ul><span class="was">Was "Components": Source, Repository, Standards, Integrators, Interfaces. Advocate and Train come from the Climate Data Players lifecycle; FOIA work, public comments, and training playbooks had no place on the old axis.</span></div>
+    <div class="axis"><h3>Users</h3><span class="q">Who is it for?</span><ul><li>Researchers</li><li>CBOs</li><li>Policy and decision makers</li><li>Investors</li><li>Risk analysts</li><li>Journalists</li></ul><span class="was">Policy makers and Decision makers merged; no organization here serves one without the other. Funders moved off this axis, since they pay for the work rather than use the data, and now color the cube instead.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Home and reach</h2>
+  <div class="def">
+    <p><b>Home</b> is what an organization exists to serve: the domains, functions, and users named in its charter, its mission, or its funder's terms. <b>Reach</b> is what its infrastructure touches without being designed for it.</p>
+    <p>The test: if the organization stopped serving it tomorrow, would its funder or board say it was failing at its job? If yes, it's home. If no, it's reach. NIH would count losing biomedical data as failure for GREI, so Health and Life are home; Dryad and Zenodo also hold climate data, but losing it wouldn't count, so Earth system is reach.</p>
+    <p>The test applies to all three axes. For now the cube draws reach only on the Domain axis.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Placements</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Organization</th><th>Domain</th><th>Function</th><th>Users</th><th>Funding</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>What the map shows so far</h2>
+  <ul class="qs">
+    <li><b>Six of eleven organizations preserve data, and one integrates it.</b><span>Only the Data Foundation's CCED works at Integrate, where datasets are combined into products. Funders on this map mostly pay for where data is kept, and almost no one works on the products that combine it.</span></li>
+    <li><b>Only one organization produces data.</b><span>KCF's PVSI, through the Keeling Curve and long-term observations, is the only point on the Produce row. The observing systems themselves are federal programs that aren't on this map, which means every other organization here depends on producers it doesn't fund or govern.</span></li>
+    <li><b>The organizations closest to communities have the least secure funding.</b><span>Color the cube by funder type. EDGI, PEDP, OEDP, and the Data Rescue Project are the only four that serve CBOs, and they run on volunteers, small grants, and philanthropy. The one federally funded organization, NIH's GREI, serves researchers in Health and Life, and its listed award period ends in 2026. CODAN coordinates with no funding at all.</span></li>
+    <li><b>Advocacy and training are now visible.</b><span>EDGI, PEDP, and KCF's PVSI advocate; GREI, OEDP, and the Data Rescue Project train. On the old axes, this work was forced into rows that didn't describe it.</span></li>
+    <li><b>KCF's PVSI and NYCE's DSI are peers at opposite ends.</b><span>PVSI produces and delivers; the DSI preserves and coordinates. They share the Earth system floor and the Researchers column and nothing else.</span></li>
+    <li><b>The Health floor has three occupants.</b><span>GREI holds funded infrastructure there. The Data Rescue Project and PEDP reach it through rescued CDC data, including the Social Vulnerability Index and the Environmental Justice Index.</span></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Open questions for reviewers</h2>
+  <ul class="qs">
+    <li><b>Do the revised axes hold up?</b><span>The axis changes are proposals to the original figure's framework. They need sign-off from the people who drew it before this page treats them as settled.</span></li>
+    <li><b>How much funding does each organization have?</b><span>Dot size is reserved for funding tier (under $250K, $250K to $2M, over $2M). It stays constant until there's a figure for every organization, since a size encoding with gaps would mislead.</span></li>
+    <li><b>Where do the funders sit?</b><span>A next layer would plot funders' own portfolios in the same space: the domains, functions, and users each one pays for. Cells with organizations but no funder show work without support; cells with neither are the true gaps.</span></li>
+    <li><b>Should partnerships be drawn as links?</b><span>EDGI and OEDP co-lead PEDP with the Environmental Policy Innovation Center, so two points in the cube are also partners inside a third. The cube can't show links; a companion network view can.</span></li>
+    <li><b>Does GREI continue past 2026?</b><span>Its listed project period runs 2022 to 2026, and an NIH Council of Councils working group has assessed its future.</span></li>
+  </ul>
+</section>
+
+<footer>Last updated October 21, 2026. Placements are a first pass by Steve Diggs for review by the AGU Data Resilience Project team and collaborators. Funding entries marked "to confirm" are unverified. Source pages: <a href="https://datafoundation.org" target="_blank" rel="noopener">Data Foundation</a>, <a href="https://news.agu.org/press-release/agu-global-data-resilience-convening/" target="_blank" rel="noopener">AGU Global Data Resilience Convening</a>, <a href="https://www.datarescueproject.org/" target="_blank" rel="noopener">Data Rescue Project</a>, <a href="https://datascience.nih.gov/data-ecosystem/generalist-repository-ecosystem-initiative" target="_blank" rel="noopener">NIH GREI</a>, <a href="https://envirodatagov.org/about" target="_blank" rel="noopener">EDGI</a>, <a href="https://www.screening-tools.com" target="_blank" rel="noopener">PEDP</a>, <a href="https://openenvironmentaldataproject.substack.com/" target="_blank" rel="noopener">OEDP</a>.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<script>
+const F=['Produce','Preserve','Standardize','Integrate','Deliver','Coordinate','Advocate','Train'];
+const U=['Researchers','CBOs','Policy and decision makers','Investors','Risk analysts','Journalists'];
+const D=['Earth system','Life','Physical','Social','Health'];
+const FT=['Federal','Philanthropy','Host institution','Volunteers and small grants','Unfunded'];
+const FT_L=['#2a78d6','#6250d6','#1baf7a','#eb6834','#8a9692'];
+const FT_D=['#3987e5','#9085e9','#22b884','#e06a37','#8a9692'];
+const O=[
+{n:"NYCE's DSI",d:['Earth system'],f:['Preserve','Coordinate'],u:['Researchers'],ft:2,fund:'New York Climate Exchange',conf:true,note:'Data Stewardship Initiative at the New York Climate Exchange; precipitation dataset risk scoring, the Dataset Statistics monitor, copy validation with Harvard LIL, and the Precipitation Do-A-Thon.'},
+{n:"KCF's PVSI",d:['Earth system'],reach:['Life'],f:['Produce','Deliver','Advocate'],u:['Researchers','Policy and decision makers','Journalists'],ft:1,fund:'Rose Family Foundation',conf:true,note:'Planetary Vital Signs Initiative at the Keeling Curve Foundation; the Keeling Curve and long-term observations, the Data Continuity Initiative, and the pull-the-plug simulator.'},
+{n:'Data Foundation CCED',d:['Earth system','Social'],f:['Standardize','Integrate','Deliver','Coordinate'],u:['Policy and decision makers','Investors','Risk analysts'],ft:1,fund:'Data Foundation donors and philanthropy',conf:true,note:'Center for Climate and Environmental Data, formerly the Climate Data Collaborative; emissions data standards, working groups, and decision-facing data.'},
+{n:'CRRDI',d:['Earth system','Life','Physical','Social','Health'],f:['Preserve','Coordinate'],u:['Researchers','Policy and decision makers'],ft:1,fund:'Robert Wood Johnson Foundation',conf:true,note:'Coalition for Resilient Research Data Infrastructure, convened by the Center for Open Science; repository maturity model and federal repository inventory.'},
+{n:'AGU Data Resilience Project',d:['Earth system','Physical','Life'],f:['Preserve','Standardize','Coordinate'],u:['Researchers'],ft:1,fund:'Hewlett Foundation, with AGU',conf:true,note:'AGU-led global effort on governance and technical architecture for resilient data; Berlin convening, March 2026.'},
+{n:'Data Rescue Project',d:['Social','Health','Earth system'],f:['Preserve','Deliver','Coordinate','Train'],u:['Researchers','CBOs','Journalists'],ft:3,fund:'Volunteers and small grants',conf:true,note:'Volunteer coalition founded by Lynda Kellam in February 2025 to preserve at-risk US federal data; rescued datasets, a portal, and an event toolkit.'},
+{n:'CODAN',d:['Earth system'],f:['Coordinate'],u:['Researchers','Policy and decision makers'],ft:4,fund:'Unfunded',conf:true,note:'Climate/Ocean Data Action Network; an information hub for climate and ocean data.'},
+{n:'NIH GREI',d:['Health','Life'],reach:['Earth system','Physical','Social'],f:['Preserve','Standardize','Deliver','Train'],u:['Researchers'],ft:0,fund:'NIH, award period 2022 to 2026',conf:true,note:'Generalist Repository Ecosystem Initiative; seven generalist repositories sharing metadata, discovery, and FAIR training for NIH-funded data.'},
+{n:'EDGI',d:['Earth system','Social'],f:['Deliver','Coordinate','Advocate'],u:['CBOs','Journalists','Policy and decision makers','Researchers'],ft:3,fund:'Grants, donations, and volunteers',conf:false,note:'Environmental Data and Governance Initiative, formed November 2016; tracks federal environmental websites and enforcement, files comments and FOIA requests, and convened PEDP.'},
+{n:'PEDP',d:['Earth system','Social','Health'],f:['Preserve','Deliver','Advocate'],u:['CBOs','Researchers','Policy and decision makers'],ft:3,fund:'Donations and member organizations',conf:false,note:'Public Environmental Data Partners, formed November 2024 and led by EDGI, OEDP, and the Environmental Policy Innovation Center; archives federal data and hosts CEJST, EJScreen, EJAM, and HIFLD Next.'},
+{n:'OEDP',d:['Earth system','Social'],f:['Standardize','Coordinate','Train'],u:['CBOs','Researchers','Policy and decision makers'],ft:1,fund:'Philanthropy',conf:false,note:'Open Environmental Data Project; governance practices and training for community-collected environmental data (Community Data Playbook, DIGITCORE toolkit) and convenings on open environmental data.'}];
+const OP_L=['#2a78d6','#e34948','#eb6834','#1baf7a','#d99400','#e0628f','#2f8a2f','#6250d6','#0b8a96','#8a5a2b','#5c6b7a'];
+const OP_D=['#3987e5','#e66767','#e06a37','#22b884','#e0a520','#e07aa0','#45a845','#9085e9','#2fb3c0','#c08a55','#8fa0b2'];
+let mode='org';
+const vis=O.map(()=>true);
+function isDark(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+function col(i){const dk=isDark();return mode==='org'?(dk?OP_D:OP_L)[i]:(dk?FT_D:FT_L)[O[i].ft]}
+function pts(o,i,ds){const a=i*2*Math.PI/O.length,ox=.26*Math.cos(a),oy=.26*Math.sin(a),x=[],y=[],z=[],t=[];
+  ds.forEach(d=>o.f.forEach(f=>o.u.forEach(u=>{x.push(F.indexOf(f)+ox);y.push(U.indexOf(u)+oy);z.push(D.indexOf(d));t.push('<b>'+o.n+'</b><br>'+d+' · '+f+' · '+u+'<br>Funding: '+o.fund+(o.conf?'':' (to confirm)'))})));return{x,y,z,t}}
+function traces(){const tr=[];O.forEach((o,i)=>{const c=col(i),h=pts(o,i,o.d);
+  tr.push({type:'scatter3d',mode:'markers',name:o.n,visible:vis[i],x:h.x,y:h.y,z:h.z,hovertext:h.t,hoverinfo:'text',marker:{size:5.5,symbol:'circle',color:c,opacity:.95,line:{width:0}}});
+  if(o.reach){const r=pts(o,i,o.reach);tr.push({type:'scatter3d',mode:'markers',name:o.n+' reach',visible:vis[i],x:r.x,y:r.y,z:r.z,hovertext:r.t.map(s=>s+'<br>Reach, not home'),hoverinfo:'text',marker:{size:5.5,symbol:'circle-open',color:c,opacity:1,line:{width:1.5,color:c}}})}});return tr}
+function layout(){const dk=isDark(),ink=dk?'#a3b0ac':'#56635f',grid=dk?'#2b3634':'#dde4e2',fam='Public Sans, Arial, sans-serif';
+  const ax=(t,v)=>({title:{text:t,font:{size:13,color:ink,family:fam}},tickvals:v.map((_,i)=>i),ticktext:v,range:[-.5,v.length-.5],tickfont:{size:11,color:ink,family:fam},gridcolor:grid,zeroline:false,showbackground:false,showspikes:false});
+  return{paper_bgcolor:'rgba(0,0,0,0)',margin:{l:0,r:0,t:0,b:0},showlegend:false,uirevision:'keep',
+   scene:{xaxis:ax('Function',F),yaxis:ax('Users',U),zaxis:ax('Domain',D),aspectmode:'manual',aspectratio:{x:1.35,y:1,z:.85},camera:{eye:{x:1.6,y:-1.7,z:.85}}},
+   hoverlabel:{font:{size:12,family:fam}}}}
+function draw(){if(window.Plotly)Plotly.react('cube',traces(),layout(),{displayModeBar:false,responsive:true})}
+const tg=document.getElementById('toggles');
+function renderToggles(){tg.innerHTML='';O.forEach((o,i)=>{const b=document.createElement('button');b.className='tg';b.id='tg'+i;b.type='button';b.setAttribute('aria-pressed',vis[i]);b.innerHTML='<i style="background:'+col(i)+'"></i>'+o.n;b.onclick=()=>{vis[i]=!vis[i];renderToggles();draw()};tg.appendChild(b)});
+  [['Show all',true],['Hide all',false]].forEach(([l,v],k)=>{const b=document.createElement('button');b.className='tg ghost';b.id='tgall'+k;b.type='button';b.textContent=l;b.onclick=()=>{vis.fill(v);renderToggles();draw()};tg.appendChild(b)})}
+function renderLegend(){const el=document.getElementById('fundLegend'),p=isDark()?FT_D:FT_L;el.hidden=mode!=='fund';el.innerHTML=FT.map((t,i)=>'<span><span class="sw" style="background:'+p[i]+'"></span>'+t+'</span>').join('')}
+function renderRows(){const dk=isDark();document.getElementById('rows').innerHTML=O.map((o,i)=>'<tr><td class="org"><i style="background:'+(dk?OP_D:OP_L)[i]+'"></i>'+o.n+'<small>'+o.note+'</small></td><td>'+o.d.join(', ')+(o.reach?'<br><span class="reach">Reach: '+o.reach.join(', ')+'</span>':'')+'</td><td>'+o.f.join(', ')+'</td><td>'+o.u.join(', ')+'</td><td>'+o.fund+'<br><span class="reach">'+FT[o.ft]+'</span>'+(o.conf?'':'<span class="tbc">to confirm</span>')+'</td></tr>').join('')}
+function setMode(m){mode=m;document.getElementById('mode-org').setAttribute('aria-pressed',m==='org');document.getElementById('mode-fund').setAttribute('aria-pressed',m==='fund');renderToggles();renderLegend();draw()}
+document.getElementById('mode-org').onclick=()=>setMode('org');
+document.getElementById('mode-fund').onclick=()=>setMode('fund');
+function all(){renderToggles();renderLegend();renderRows();draw()}
+all();
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all)}catch(e){}
+new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
+</body>
+</html>
